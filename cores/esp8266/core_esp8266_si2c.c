@@ -248,6 +248,14 @@ static unsigned char twi_read_byte(bool nack) {
   return byte;
 }
 
+// Maarten - Generate a clock "valey" (at the end of a segment, just before a repeated start)
+void twi_scl_valey( void ) {
+  SCL_LOW();
+  twi_delay(twi_dcount);
+  SCL_HIGH();
+  unsigned int t=0; while(SCL_READ()==0 && (t++)<twi_clockStretchLimit); // Clock stretching
+}
+
 unsigned char twi_writeTo(unsigned char address, unsigned char * buf, unsigned int len, unsigned char sendStop){
   unsigned int i;
   if(!twi_write_start()) return 4;//line busy
@@ -262,12 +270,13 @@ unsigned char twi_writeTo(unsigned char address, unsigned char * buf, unsigned i
     }
   }
   if(sendStop) twi_write_stop();
+	else twi_scl_valey(); // Maarten
   i = 0;
   while(SDA_READ() == 0 && (i++) < 10){
     SCL_LOW();
     twi_delay(twi_dcount);
     SCL_HIGH();
-    unsigned int t=0; while(SCL_READ()==0 && (t++)<twi_clockStretchLimit); // twi_clockStretchLimit
+	// Maarten unsigned int t=0; while(SCL_READ()==0 && (t++)<twi_clockStretchLimit); // twi_clockStretchLimit
     twi_delay(twi_dcount);
   }
   return 0;
@@ -283,12 +292,13 @@ unsigned char twi_readFrom(unsigned char address, unsigned char* buf, unsigned i
   for(i=0; i<(len-1); i++) buf[i] = twi_read_byte(false);
   buf[len-1] = twi_read_byte(true);
   if(sendStop) twi_write_stop();
+	else twi_scl_valey(); // Maarten
   i = 0;
   while(SDA_READ() == 0 && (i++) < 10){
     SCL_LOW();
     twi_delay(twi_dcount);
     SCL_HIGH();
-    unsigned int t=0; while(SCL_READ()==0 && (t++)<twi_clockStretchLimit); // twi_clockStretchLimit
+	// Maarten unsigned int t=0; while(SCL_READ()==0 && (t++)<twi_clockStretchLimit); // twi_clockStretchLimit
     twi_delay(twi_dcount);
   }
   return 0;
